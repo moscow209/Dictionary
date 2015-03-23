@@ -1,16 +1,16 @@
-package com.example.model;
+package com.example.common;
 
 import java.util.HashMap;
 
 /**
- * @version 1.0 Mar 20, 2015.
+ * @version 1.0 Mar 23, 2015.
  * @author Moscow209
  */
-public class MyDictionary<K, V> {
-
+public class MyHashMap<K, V> {
+	
 	private HashMap<K, V> dictionary;
 
-	public MyDictionary() {
+	public MyHashMap() {
 		dictionary = new HashMap<K, V>();
 	}
 
@@ -20,6 +20,14 @@ public class MyDictionary<K, V> {
 
 	public V get(K key) {
 		return dictionary.get(key);
+	}
+	
+	public int size(){
+		return dictionary.size();
+	}
+	
+	public boolean containsKey(Object key){
+		return dictionary.containsKey(key);
 	}
 
 	public HashMap<K, V> getDictionary() {
