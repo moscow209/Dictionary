@@ -1,28 +1,23 @@
 package com.example.dao;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Map;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import com.example.common.MyHashMap;
-import com.example.common.UICommons;
+import com.example.common.MyArrayList;
 import com.example.model.Dictionary;
 
 /**
@@ -31,47 +26,55 @@ import com.example.model.Dictionary;
  */
 public class LoadDictionaryDAO {
 
-	public Map<String, String> read(String file)
+	private MyArrayList<Dictionary> items = new MyArrayList<Dictionary>();
+
+	public MyArrayList<Dictionary> read(String file)
 			throws ParserConfigurationException, SAXException, IOException {
 
 		SAXParserFactory factory = SAXParserFactory.newInstance();
 		SAXParser parser = factory.newSAXParser();
 		Handler hander = new Handler();
-		parser.parse(file, hander);
-		return hander.getItems();
+		parser.parse(new BufferedInputStream(new FileInputStream(file)), hander);
+		return items;
 	}
 
-	public void write(String file, String word, String mean)
-			throws ParserConfigurationException, SAXException, IOException,
-			TransformerException {
+	public void write(String file, MyArrayList<Dictionary> dict)
+			throws XMLStreamException, IOException {
+		XMLOutputFactory factory = XMLOutputFactory.newInstance();
+		XMLStreamWriter writer = factory.createXMLStreamWriter(
+				new BufferedOutputStream(new FileOutputStream(file)), "UTF-8");
+		writer.writeStartDocument();
+		writer.writeCharacters("\r\n  ");
+		writer.writeStartElement("dictionary");
+		for (int i = 0; i < dict.size(); i++) {
+			writer.writeCharacters("\r\n  ");
+			writer.writeStartElement("record");
+			writer.writeCharacters("\r\n  ");
+			writer.writeStartElement("word");
+			writer.writeCharacters(dict.get(i).getWord());
+			writer.writeEndElement();
+			writer.writeCharacters("\r\n  ");
+			writer.writeStartElement("meaning");
+			writer.writeCharacters(dict.get(i).getMean());
+			writer.writeEndElement();
+			writer.writeCharacters("\r\n  ");
+			writer.writeEndElement();
+		}
+		writer.writeCharacters("\r\n  ");
+		writer.writeEndElement();
+		writer.writeCharacters("\r\n  ");
+		writer.writeEndDocument();
 
-		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder builder = factory.newDocumentBuilder();
-		Document document = builder.parse(file);
-		Element root = document.getDocumentElement();
-		root.appendChild(createNode(document, word, mean));
-		TransformerFactory transFactory = TransformerFactory.newInstance();
-		Transformer trans = transFactory.newTransformer();
-		trans.transform(new DOMSource(document), new StreamResult(
-				new FileOutputStream(file, true)));
+		writer.flush();
+		writer.close();
 
 	}
 
-	private Element createNode(Document doc, String word, String mean) {
-		Element recordNode = doc.createElement("record");
-		Element wordNode = doc.createElement("word");
-		wordNode.appendChild(doc.createTextNode(word));
-		recordNode.appendChild(wordNode);
-
-		Element meanNode = doc.createElement("meaning");
-		meanNode.appendChild(doc.createTextNode(mean));
-		recordNode.appendChild(meanNode);
-		return recordNode;
-	}
-	
 	private final class Handler extends DefaultHandler {
+		private static final String RECORD = "record";
+		private static final String WORD = "word";
+		private static final String MEAN = "meaning";
 		private StringBuilder builder = new StringBuilder();
-		private MyHashMap<String, String> items = new MyHashMap<String, String>();
 		private boolean isStart = false;
 		private Dictionary model;
 
@@ -88,15 +91,13 @@ public class LoadDictionaryDAO {
 				throws SAXException {
 			// TODO Auto-generated method stub
 			super.endElement(uri, localName, qName);
-			if (model != null) {
-				if (UICommons.WORD.equalsIgnoreCase(qName)) {
-					model.setWord(builder.toString());
-				} else if (UICommons.MEAN.equalsIgnoreCase(qName)) {
-					model.setMean(builder.toString());
-				} else if (UICommons.RECORD.equalsIgnoreCase(qName)) {
-					items.put(model.getWord(), model.getMean());
-					isStart = false;
-				}
+			if (WORD.equalsIgnoreCase(qName)) {
+				model.setWord(builder.toString());
+			} else if (MEAN.equalsIgnoreCase(qName)) {
+				model.setMean(builder.toString());
+			} else if (RECORD.equalsIgnoreCase(qName)) {
+				items.add(model);
+				isStart = false;
 			}
 		}
 
@@ -104,16 +105,11 @@ public class LoadDictionaryDAO {
 				Attributes attributes) throws SAXException {
 			// TODO Auto-generated method stub
 			super.startElement(uri, localName, qName, attributes);
-			if (UICommons.RECORD.equalsIgnoreCase(qName)) {
-				model = new Dictionary();
+			if (RECORD.equalsIgnoreCase(qName)) {
 				isStart = true;
+				model = new Dictionary();
 			}
 			builder.setLength(0);
 		}
-
-		public Map<String, String> getItems() {
-			return items.getDictionary();
-		}
-		
 	}
 }

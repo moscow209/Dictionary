@@ -1,5 +1,7 @@
 package com.example.model;
 
+import java.util.Comparator;
+
 /**
  * @version 1.0 Mar 20, 2015.
  * @author Moscow209
@@ -32,4 +34,5 @@ public class Dictionary {
 	public void setMean(String mean) {
 		this.mean = mean;
 	}
+
 }

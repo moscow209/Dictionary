@@ -1,10 +1,9 @@
 package com.example.presentation;
 
-import javax.swing.DefaultListModel;
-import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextPane;
 
 /**
  * @version 1.0 Mar 23, 2015.
@@ -13,8 +12,7 @@ import javax.swing.JScrollPane;
 public class FrmDictionary extends JPanel {
 
 	private JList list;
-	private JScrollPane sp;
-	private JLabel lblMean;
+	private JTextPane lblMean;
 
 	public FrmDictionary() {
 		setLayout(null);
@@ -23,27 +21,27 @@ public class FrmDictionary extends JPanel {
 	}
 
 	private JScrollPane getJList() {
-		JList list = new JList();
-		DefaultListModel<String> model = new DefaultListModel<String>();
-		for(int i = 0; i < 50; i++){
-			model.addElement("moskva" + i);
-		}
-		
-		list.setModel(model);
-		list.setSelectedIndex(21);
-		sp = new JScrollPane(list);
+		list = new JList();
+		JScrollPane sp = new JScrollPane(list);
 		sp.setLocation(0, 0);
 		sp.setSize(220, 501);
-		list.ensureIndexIsVisible(21);
-		
-		
+		list.setSelectedIndex(0);
 		return sp;
 	}
 
-	private JLabel getJLabel() {
-		lblMean = new JLabel("New label");
-		lblMean.setBounds(231, 2, 356, 499);
-		return lblMean;
+	private JScrollPane getJLabel() {
+		lblMean = new JTextPane();
+		JScrollPane sp = new JScrollPane(lblMean);
+		sp.setLocation(231, 2);
+		sp.setSize(385, 499);
+		return sp;
 	}
 
+	public JList getList() {
+		return list;
+	}
+
+	public JTextPane getLblMean() {
+		return lblMean;
+	}
 }

@@ -1,28 +1,19 @@
 package com.example.dao;
 
+import java.io.BufferedOutputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.List;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.Transformer;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 import com.example.common.MyArrayList;
-import com.example.common.UICommons;
 import com.example.model.Dictionary;
 
 /**
@@ -30,98 +21,66 @@ import com.example.model.Dictionary;
  * @author Moscow209
  */
 public class FavoriteDAO {
-	private List<Dictionary> favorite;
+	private MyArrayList<Dictionary> favorite;
 
 	public FavoriteDAO() {
 		favorite = new MyArrayList<Dictionary>();
 	}
 
-	public boolean addList(Dictionary dict) {
-		for(int i = 0; i < favorite.size(); i++){
-			if(favorite.get(i).getWord().equalsIgnoreCase(dict.getWord())){
+	public boolean isCheck(String word) {
+		for (int i = 0; i < favorite.size(); i++) {
+			if (favorite.get(i).getWord().equalsIgnoreCase(word)) {
 				return false;
 			}
 		}
-		favorite.add(dict);
 		return true;
 	}
 
 	public void read(String file) throws ParserConfigurationException,
 			SAXException, IOException {
-		SAXParserFactory factory = SAXParserFactory.newInstance();
-		SAXParser parser = factory.newSAXParser();
-		Handler hander = new Handler();
-		parser.parse(file, hander);
+		favorite = ParseDAO.read(file, "favorite");
 	}
 
 	public void write(String file, String word, String mean)
 			throws ParserConfigurationException, SAXException, IOException,
 			TransformerException {
-
-		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder builder = factory.newDocumentBuilder();
-		Document document = builder.newDocument();
-		Element root = document.createElement("dictionary");
-		document.appendChild(root);
-		root.appendChild(createNode(document, word, mean));
-		TransformerFactory transFactory = TransformerFactory.newInstance();
-		Transformer trans = transFactory.newTransformer();
-		trans.transform(new DOMSource(document), new StreamResult(
-				new FileOutputStream(file, true)));
-
+		new ParseDAO().write(file, word, mean, "favorite");
 	}
 
-	private Element createNode(Document doc, String word, String mean) {
-		Element recordNode = doc.createElement("record");
-		Element wordNode = doc.createElement("word");
-		wordNode.appendChild(doc.createTextNode(word));
-		recordNode.appendChild(wordNode);
+	public void write(String file) throws FileNotFoundException, XMLStreamException{
+		XMLOutputFactory factory = XMLOutputFactory.newInstance();
+		XMLStreamWriter writer = factory.createXMLStreamWriter(
+				new BufferedOutputStream(new FileOutputStream(file)), "UTF-8");
+		writer.writeStartDocument();
+		writer.writeCharacters("\r\n  ");
+		writer.writeStartElement("favorite");
+		for (int i = 0; i < favorite.size(); i++) {
+			writer.writeCharacters("\r\n  ");
+			writer.writeStartElement("record");
+			writer.writeCharacters("\r\n  ");
+			writer.writeStartElement("word");
+			writer.writeCharacters(favorite.get(i).getWord());
+			writer.writeEndElement();
+			writer.writeCharacters("\r\n  ");
+			writer.writeStartElement("meaning");
+			writer.writeCharacters(favorite.get(i).getMean());
+			writer.writeEndElement();
+			writer.writeCharacters("\r\n  ");
+			writer.writeEndElement();
+		}
+		writer.writeCharacters("\r\n  ");
+		writer.writeEndElement();
+		writer.writeCharacters("\r\n  ");
+		writer.writeEndDocument();
 
-		Element meanNode = doc.createElement("meaning");
-		meanNode.appendChild(doc.createTextNode(mean));
-		recordNode.appendChild(meanNode);
-		return recordNode;
+		writer.flush();
+		writer.close();
+
 	}
-
-	private final class Handler extends DefaultHandler {
-		private StringBuilder builder = new StringBuilder();
-		private boolean isStart = false;
-		private Dictionary model;
-
-		public void characters(char[] ch, int start, int length)
-				throws SAXException {
-			// TODO Auto-generated method stub
-			super.characters(ch, start, length);
-			if (isStart) {
-				builder.append(ch, start, length);
-			}
-		}
-
-		public void endElement(String uri, String localName, String qName)
-				throws SAXException {
-			// TODO Auto-generated method stub
-			super.endElement(uri, localName, qName);
-			if (model != null) {
-				if (UICommons.WORD.equalsIgnoreCase(qName)) {
-					model.setWord(builder.toString());
-				} else if (UICommons.MEAN.equalsIgnoreCase(qName)) {
-					model.setMean(builder.toString());
-				} else if (UICommons.RECORD.equalsIgnoreCase(qName)) {
-					favorite.add(model);
-					isStart = false;
-				}
-			}
-		}
-
-		public void startElement(String uri, String localName, String qName,
-				Attributes attributes) throws SAXException {
-			// TODO Auto-generated method stub
-			super.startElement(uri, localName, qName, attributes);
-			if (UICommons.RECORD.equalsIgnoreCase(qName)) {
-				model = new Dictionary();
-				isStart = true;
-			}
-			builder.setLength(0);
-		}
+	
+	public MyArrayList<Dictionary> getFavorite() {
+		return favorite;
 	}
+	
+	
 }
